@@ -3,6 +3,8 @@ package org.poo.account;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 import org.poo.card.Card;
+import org.poo.commerciants.Commerciant;
+import org.poo.user.User;
 import org.poo.utils.Utils;
 
 import java.util.ArrayList;
@@ -17,10 +19,11 @@ public class Account {
     private String accountType;
     private double balance;
     private String currency;
+    private User owner;
     private ArrayList<ObjectNode> accountTransactions;
     private String alias;
-    private Integer nrOfTransactions;
-    private Map<Integer, Boolean> cashbacks;
+    private Map<Commerciant, Integer> transPerCommerciant;
+    private Map<Commerciant, Boolean> cashbacks;
     private double cashbackAmount;
 
     /**
@@ -28,20 +31,26 @@ public class Account {
      * @param currency for the account
      * @param accountType for the account
      */
-    public Account(final String currency, final String accountType) {
-        this.setAccountIBAN(Utils.generateIBAN());
-        this.setBalance(Utils.INITIAL_BALANCE);
-        this.setCurrency(currency);
-        this.setAccountType(accountType);
-        this.setCards(new ArrayList<>());
-        this.setAccountTransactions(new ArrayList<>());
-        this.setAlias(null);
-        this.setNrOfTransactions(0);
-        this.setCashbacks(new HashMap<>());
+    public Account(final String currency, final String accountType,
+                    final ArrayList<Commerciant> commerciants, final User owner) {
+        setAccountIBAN(Utils.generateIBAN());
+        setBalance(Utils.INITIAL_BALANCE);
+        setCurrency(currency);
+        setOwner(owner);
+        setAccountType(accountType);
+        setCards(new ArrayList<>());
+        setAccountTransactions(new ArrayList<>());
+        setAlias(null);
+        setTransPerCommerciant(new HashMap<>());
+        setCashbacks(new HashMap<>());
 
-        this.getCashbacks().put(2, false);
-        this.getCashbacks().put(5, false);
-        this.getCashbacks().put(10, false);
+        for (Commerciant commerciant : commerciants) {
+            if (commerciant.getCashbackStrategy().equals("nrOfTransactions")) {
+                getTransPerCommerciant().put(commerciant, 0);
+                getCashbacks().put(commerciant, false);
+            }
+        }
+
         this.setCashbackAmount(0);
     }
 
@@ -51,7 +60,9 @@ public class Account {
      */
     public void addTransaction(final ObjectNode transaction) {
         for (ObjectNode accountTransaction : accountTransactions) {
-            if (accountTransaction.equals(transaction)) {
+            if (accountTransaction.get("timestamp").equals(transaction.get("timestamp"))
+                    && accountTransaction.get("description").
+                    equals(transaction.get("description"))) {
                 return;
             }
         }
@@ -88,17 +99,26 @@ public class Account {
     }
 
     /**
-     * Increment the number of transactions
-     */
-    public void incrementTransactions() {
-        this.setNrOfTransactions(this.getNrOfTransactions() + 1);
-    }
-
-    /**
      * Add cashback to account
      * @param cashback to add
      */
     public void addAmountToCashback(final double cashback) {
         this.setCashbackAmount(this.getCashbackAmount() + cashback);
+    }
+
+    /**
+     * Increment transaction for a specified Commerciant
+     * @param comm - the specified commerciant
+     */
+    public void incrementTransactions(final Commerciant comm) {
+        getTransPerCommerciant().put(comm, getTransPerCommerciant().get(comm) + 1);
+    }
+
+    /**
+     * Put true if I used this commerciant casback to specified number of Transactions
+     * @param neededCommerciant - the specified commerciant
+     */
+    public void gotThisCommerciantCashback(final Commerciant neededCommerciant) {
+        getCashbacks().put(neededCommerciant, true);
     }
 }

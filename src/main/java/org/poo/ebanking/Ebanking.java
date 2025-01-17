@@ -15,7 +15,12 @@ import org.poo.commands.accountRelatedCommands.SpendingsReport;
 import org.poo.commands.cardRelatedCommands.CheckCardStatus;
 import org.poo.commands.cardRelatedCommands.CreateCard;
 import org.poo.commands.cardRelatedCommands.DeleteCard;
-import org.poo.commands.payoutRelatedCommands.*;
+import org.poo.commands.payoutRelatedCommands.AddFunds;
+import org.poo.commands.payoutRelatedCommands.CashWithdrawal;
+import org.poo.commands.payoutRelatedCommands.PayOnline;
+import org.poo.commands.payoutRelatedCommands.SendMoney;
+import org.poo.commands.payoutRelatedCommands.SplitPayment;
+import org.poo.commands.payoutRelatedCommands.WithdrawSavings;
 import org.poo.commands.userRelatedCommands.PrintTransactions;
 import org.poo.commands.userRelatedCommands.PrintUsers;
 import org.poo.commands.userRelatedCommands.UpgradePlan;
@@ -110,7 +115,12 @@ public final class Ebanking {
         }
     }
 
-    private VisitableCommand createCommand(CommandInput commandInput) {
+    /**
+     * Create a command based on the input
+     * @param commandInput - the input command
+     * @return the command to be executed
+     */
+    private VisitableCommand createCommand(final CommandInput commandInput) {
         return switch (commandInput.getCommand()) {
             case "addAccount" -> new AddAccount();
             case "createCard", "createOneTimeCard" -> new CreateCard();
@@ -123,7 +133,7 @@ public final class Ebanking {
             case "setMinBalance" -> new SetMinimumBalance();
             case "checkCardStatus" -> new CheckCardStatus();
             case "changeInterestRate" -> new ChangeInterestRate();
-            case "splitPayment" -> new SplitPayment();
+            case "splitPayment", "acceptSplitPayment", "rejectSplitPayment" -> new SplitPayment();
             case "addInterest" -> new AddInterest();
             case "report" -> new Report();
             case "spendingsReport" -> new SpendingsReport();
@@ -136,11 +146,15 @@ public final class Ebanking {
         };
     }
 
+    /**
+     * Reset the Ebanking instance
+     */
     public void reset() {
         users.clear();
         commerciants.clear();
         ExchangeRates.reset();
         Ebanking.instance = null;
+        SplitPayment.resetCommands();
     }
 }
 

@@ -52,7 +52,6 @@ public final class ChangeInterestRate implements VisitableCommand {
                             + command.getInterestRate());
 
             neededAccount.addTransaction(transaction);
-            neededUser.addTransaction(transaction);
 
             return;
         }

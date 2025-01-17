@@ -10,6 +10,7 @@ import org.poo.commands.commandsCenter.VisitableCommand;
 import org.poo.exchangeRates.ExchangeRates;
 import org.poo.fileio.CommandInput;
 import org.poo.user.User;
+import org.poo.utils.Utils;
 
 import java.util.ArrayList;
 
@@ -30,7 +31,8 @@ public final class SendMoney implements VisitableCommand {
      * @param command - the command to be executed
      * @param users - the list of users
      */
-    public void execute(final CommandInput command, final ArrayList<User> users, final ArrayNode output) {
+    public void execute(final CommandInput command, final ArrayList<User> users,
+                        final ArrayNode output) {
         User sender = null;
         User receiver = null;
 
@@ -76,16 +78,31 @@ public final class SendMoney implements VisitableCommand {
         }
 
         double exchangeRate = ExchangeRates.findCurrency(senderAccount.getCurrency(),
-                receiverAccount.getCurrency());
+                                                         receiverAccount.getCurrency());
 
-        if (senderAccount.getBalance() < command.getAmount()) {
+        double toRon = ExchangeRates.findCurrency(senderAccount.getCurrency(), "RON");
+
+        double taxes = Utils.INITIAL_BALANCE;
+
+        switch (sender.getPlan()) {
+            case "standard" -> taxes = (Utils.MEDIUM_STUDENT_RATE * command.getAmount());
+
+            case "silver" -> {
+                if (command.getAmount() * toRon > Utils.LARGE_LIMIT) {
+                    taxes = Utils.SMALL_STUDENT_RATE * command.getAmount();
+                }
+            }
+
+            default -> taxes = Utils.INITIAL_BALANCE;
+        }
+
+        if (senderAccount.getBalance() < command.getAmount() + taxes) {
             ObjectMapper mapper = new ObjectMapper();
             ObjectNode transaction = mapper.createObjectNode();
 
             transaction.put("description", "Insufficient funds");
             transaction.put("timestamp", command.getTimestamp());
 
-            sender.addTransaction(transaction);
             senderAccount.addTransaction(transaction);
 
             return;
@@ -97,11 +114,9 @@ public final class SendMoney implements VisitableCommand {
                 .put("description", command.getDescription())
                 .put("senderIBAN", senderAccount.getAccountIBAN())
                 .put("receiverIBAN", receiverAccount.getAccountIBAN())
-                .put("amount", + command.getAmount() + " " + senderAccount.getCurrency())
+                .put("amount", command.getAmount() + " " + senderAccount.getCurrency())
                 .put("transferType", "sent");
 
-
-        sender.addTransaction(senderTransaction);
         senderAccount.addTransaction(senderTransaction);
 
         ObjectNode receiverTransaction = mapper.createObjectNode()
@@ -113,22 +128,10 @@ public final class SendMoney implements VisitableCommand {
                             + receiverAccount.getCurrency())
                     .put("transferType", "received");
 
-        receiver.addTransaction(receiverTransaction);
         receiverAccount.addTransaction(receiverTransaction);
 
-        senderAccount.subtractAmountFromBalance(command.getAmount());
+        senderAccount.subtractAmountFromBalance(command.getAmount() + taxes);
         receiverAccount.addAmountToBalance(command.getAmount() * exchangeRate);
-
-        double toRon = ExchangeRates.findCurrency(senderAccount.getCurrency(), "RON");
-
-        switch (sender.getPlan()) {
-            case "standard" -> senderAccount.subtractAmountFromBalance(0.002 * command.getAmount());
-            case "silver" -> {
-                if (command.getAmount() * toRon > 500) {
-                    senderAccount.subtractAmountFromBalance(0.001 * command.getAmount());
-                }
-            }
-        }
     }
 
     @Override

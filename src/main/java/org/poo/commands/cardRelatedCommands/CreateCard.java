@@ -71,7 +71,6 @@ public final class CreateCard implements VisitableCommand {
         transaction.put("description", "New card created");
         transaction.put("timestamp", command.getTimestamp());
 
-        neededUser.addTransaction(transaction);
         neededAccount.addTransaction(transaction);
     }
 

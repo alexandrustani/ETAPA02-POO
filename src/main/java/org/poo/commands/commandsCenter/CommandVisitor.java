@@ -1,14 +1,29 @@
 package org.poo.commands.commandsCenter;
 
-import org.poo.commands.accountRelatedCommands.*;
+import org.poo.commands.accountRelatedCommands.AddInterest;
+import org.poo.commands.accountRelatedCommands.AddAccount;
+import org.poo.commands.accountRelatedCommands.ChangeInterestRate;
+import org.poo.commands.accountRelatedCommands.DeleteAccount;
+import org.poo.commands.accountRelatedCommands.SetMinimumBalance;
+import org.poo.commands.accountRelatedCommands.SetAlias;
+import org.poo.commands.accountRelatedCommands.Report;
+import org.poo.commands.accountRelatedCommands.SpendingsReport;
 import org.poo.commands.cardRelatedCommands.CheckCardStatus;
 import org.poo.commands.cardRelatedCommands.CreateCard;
 import org.poo.commands.cardRelatedCommands.DeleteCard;
-import org.poo.commands.payoutRelatedCommands.*;
+import org.poo.commands.payoutRelatedCommands.AddFunds;
+import org.poo.commands.payoutRelatedCommands.CashWithdrawal;
+import org.poo.commands.payoutRelatedCommands.PayOnline;
+import org.poo.commands.payoutRelatedCommands.SendMoney;
+import org.poo.commands.payoutRelatedCommands.SplitPayment;
+import org.poo.commands.payoutRelatedCommands.WithdrawSavings;
 import org.poo.commands.userRelatedCommands.PrintTransactions;
 import org.poo.commands.userRelatedCommands.PrintUsers;
 import org.poo.commands.userRelatedCommands.UpgradePlan;
 
+/**
+ * Interface for the CommandVisitor.
+ */
 public interface CommandVisitor {
     /**
      * Visits an AddAccount command.

@@ -1,6 +1,8 @@
 package org.poo.account;
 import lombok.Getter;
 import lombok.Setter;
+import org.poo.commerciants.Commerciant;
+import org.poo.user.User;
 import org.poo.utils.Utils;
 
 import java.util.ArrayList;
@@ -17,8 +19,8 @@ public final class ClassicAccount extends Account implements SpecialAccountFunct
      * Constructor for ClassicAccount
      * @param currency for the account
      */
-    public ClassicAccount(final String currency) {
-        super(currency, Utils.CLASSIC);
+    public ClassicAccount(final String currency, final ArrayList<Commerciant> myCommerciants, final User owner) {
+        super(currency, Utils.CLASSIC, myCommerciants, owner);
         this.setCommerciants(new ArrayList<>());
     }
 

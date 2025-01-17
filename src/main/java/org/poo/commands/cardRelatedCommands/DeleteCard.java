@@ -61,7 +61,6 @@ public final class DeleteCard implements VisitableCommand {
         transaction.put("timestamp", command.getTimestamp());
 
         neededAccount.addTransaction(transaction);
-        neededUser.addTransaction(transaction);
 
         neededAccount.getCards().remove(neededCard);
     }

@@ -17,6 +17,7 @@ import java.util.ArrayList;
 
 import org.poo.account.CommerciantsDetails;
 import org.poo.user.User;
+import org.poo.utils.Utils;
 
 /**
  * Command to pay online.
@@ -68,7 +69,6 @@ public final class PayOnline implements VisitableCommand {
             transaction.put("description", "The card is frozen");
 
             neededAccount.addTransaction(transaction);
-            neededUser.addTransaction(transaction);
 
             return true;
         }
@@ -76,7 +76,7 @@ public final class PayOnline implements VisitableCommand {
         return false;
     }
 
-    public void setCashbackStrategy(CashbackStrategy cashbackStrategy) {
+    public void setCashbackStrategy(final CashbackStrategy cashbackStrategy) {
         this.cashbackStrategy = cashbackStrategy;
     }
 
@@ -97,11 +97,23 @@ public final class PayOnline implements VisitableCommand {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode transaction = mapper.createObjectNode();
 
-        if (neededAccount.getBalance() < command.getAmount() * neededExchangeRate) {
+        double toRon = ExchangeRates.findCurrency(command.getCurrency(), "RON");
+        double taxes = Utils.INITIAL_BALANCE;
+        switch (neededUser.getPlan()) {
+            case "standard" -> taxes = (Utils.MEDIUM_STUDENT_RATE
+                                        * command.getAmount()) * neededExchangeRate;
+            case "silver" -> {
+                if (command.getAmount() * toRon > Utils.LARGE_LIMIT) {
+                    taxes = (Utils.SMALL_STUDENT_RATE * command.getAmount()) * neededExchangeRate;
+                }
+            }
+            default -> taxes = Utils.INITIAL_BALANCE;
+        }
+
+        if (neededAccount.getBalance() < (command.getAmount() * neededExchangeRate + taxes)) {
             transaction.put("description", "Insufficient funds");
             transaction.put("timestamp", command.getTimestamp());
 
-            neededUser.addTransaction(transaction);
             neededAccount.addTransaction(transaction);
 
             return;
@@ -112,7 +124,6 @@ public final class PayOnline implements VisitableCommand {
         transaction.put("description", "Card payment");
         transaction.put("timestamp", command.getTimestamp());
 
-        neededUser.addTransaction(transaction);
         neededAccount.addTransaction(transaction);
 
         CommerciantsDetails commerciant = new CommerciantsDetails(command.getCommerciant(),
@@ -122,32 +133,22 @@ public final class PayOnline implements VisitableCommand {
             ((ClassicAccount) neededAccount).addCommerciant(commerciant);
         }
 
-        double toRon = ExchangeRates.findCurrency(command.getCurrency(), "RON");
-        switch (neededUser.getPlan()) {
-            case "standard" ->
-                neededAccount.subtractAmountFromBalance(0.002
-                                                        * command.getAmount() * neededExchangeRate);
-            case "silver" -> {
-                if (command.getAmount() * toRon > 500) {
-                    neededAccount.subtractAmountFromBalance(0.001
-                                                            * command.getAmount() * neededExchangeRate);
-                }
-            }
-        }
-
         if (neededCommerciant.getCashbackStrategy().equals("nrOfTransactions")) {
             cashbackStrategy = new NrOfTransactionsCashback();
         } else {
             cashbackStrategy = new SpendingThresholdCashback();
         }
 
+        neededUser.checkTransactions(command.getAmount() * toRon,
+                neededAccount.getAccountIBAN(),
+                command.getTimestamp());
+
         cashbackStrategy.applyCashback(command, neededAccount, neededUser, neededCommerciant,
                                         neededExchangeRate);
 
-        neededAccount.setBalance(neededAccount.getBalance() - command.getAmount()
-                                 * neededExchangeRate);
 
-        neededUser.checkTransactions(command.getAmount() * toRon);
+        neededAccount.setBalance(neededAccount.getBalance() - (command.getAmount()
+                                 * neededExchangeRate + taxes));
 
         if (neededCard.getCardType().equals("one-time")) {
             ObjectNode transaction1 = mapper.createObjectNode();
@@ -159,7 +160,6 @@ public final class PayOnline implements VisitableCommand {
             transaction1.put("timestamp", command.getTimestamp());
 
             neededAccount.addTransaction(transaction1);
-            neededUser.addTransaction(transaction1);
 
             neededAccount.generateNewCardNumber(neededCard);
 
@@ -172,7 +172,6 @@ public final class PayOnline implements VisitableCommand {
             transaction2.put("timestamp", command.getTimestamp());
 
             neededAccount.addTransaction(transaction2);
-            neededUser.addTransaction(transaction2);
         }
     }
 
@@ -217,7 +216,7 @@ public final class PayOnline implements VisitableCommand {
                 .findFirst()
                 .orElse(null);
 
-        if(neededCommerciant == null) {
+        if (neededCommerciant == null) {
             return;
         }
 
@@ -226,7 +225,7 @@ public final class PayOnline implements VisitableCommand {
     }
 
     @Override
-    public void accept(CommandVisitor commandVisitor) {
+    public void accept(final CommandVisitor commandVisitor) {
         commandVisitor.visit(this);
     }
 }

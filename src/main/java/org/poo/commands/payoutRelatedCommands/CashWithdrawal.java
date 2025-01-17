@@ -10,9 +10,13 @@ import org.poo.commands.commandsCenter.VisitableCommand;
 import org.poo.exchangeRates.ExchangeRates;
 import org.poo.fileio.CommandInput;
 import org.poo.user.User;
+import org.poo.utils.Utils;
 
 import java.util.ArrayList;
 
+/**
+ * Cash withdrawal command class.
+ */
 public final class CashWithdrawal implements VisitableCommand {
     /**
      * Empty constructor
@@ -25,7 +29,8 @@ public final class CashWithdrawal implements VisitableCommand {
      * @param command - the command to be executed
      * @param users - the list of users
      */
-    public void execute(final CommandInput command, final ArrayList<User> users, final ArrayNode output) {
+    public void execute(final CommandInput command, final ArrayList<User> users,
+                        final ArrayNode output) {
         User neededUser = null;
         Account neededAccount = null;
         Card neededCard = null;
@@ -58,8 +63,25 @@ public final class CashWithdrawal implements VisitableCommand {
         }
 
         double fromRon = ExchangeRates.findCurrency("RON", neededAccount.getCurrency());
+        double taxes = Utils.INITIAL_BALANCE;
 
-        if (neededAccount.getBalance() < command.getAmount() * fromRon) {
+        switch (neededUser.getPlan()) {
+            case "standard" -> taxes = Utils.MEDIUM_STUDENT_RATE * command.getAmount() * fromRon;
+            case "silver" -> {
+                if (command.getAmount() > Utils.LARGE_LIMIT) {
+                    taxes = Utils.SMALL_STUDENT_RATE * command.getAmount() * fromRon;
+                }
+            }
+            default -> taxes = Utils.INITIAL_BALANCE;
+        }
+
+        System.out.println("Taxes: " + taxes);
+        System.out.println("amount from Ron " + command.getAmount() * fromRon);
+        System.out.println("balance " + neededAccount.getBalance());
+        System.out.println("account " + neededAccount.getAccountIBAN());
+        System.out.println("user " + neededAccount.getOwner().getEmail());
+
+        if (neededAccount.getBalance() < command.getAmount() * fromRon + taxes) {
             ObjectMapper mapper = new ObjectMapper();
             ObjectNode transactionNode = mapper.createObjectNode()
                     .put("timestamp", command.getTimestamp())
@@ -67,18 +89,6 @@ public final class CashWithdrawal implements VisitableCommand {
 
             neededAccount.addTransaction(transactionNode);
             return;
-        }
-
-        switch (neededUser.getPlan()) {
-            case "standard" -> neededAccount.
-                    subtractAmountFromBalance(0.002
-                                              * command.getAmount() * fromRon);
-            case "silver" -> {
-                if (command.getAmount() > 500) {
-                    neededAccount.subtractAmountFromBalance(0.001
-                                                            * command.getAmount() * fromRon);
-                }
-            }
         }
 
         ObjectMapper mapper = new ObjectMapper();
@@ -89,7 +99,8 @@ public final class CashWithdrawal implements VisitableCommand {
 
         neededAccount.addTransaction(transactionNode);
 
-        neededAccount.subtractAmountFromBalance(command.getAmount() * fromRon);
+        neededAccount.subtractAmountFromBalance(command.getAmount() * fromRon + taxes);
+        System.out.println("after cash withdrawal "+ neededAccount.getBalance());
     }
 
     @Override

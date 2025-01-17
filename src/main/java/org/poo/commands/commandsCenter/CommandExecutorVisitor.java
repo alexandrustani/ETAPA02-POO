@@ -14,7 +14,12 @@ import org.poo.commands.accountRelatedCommands.SpendingsReport;
 import org.poo.commands.cardRelatedCommands.CheckCardStatus;
 import org.poo.commands.cardRelatedCommands.CreateCard;
 import org.poo.commands.cardRelatedCommands.DeleteCard;
-import org.poo.commands.payoutRelatedCommands.*;
+import org.poo.commands.payoutRelatedCommands.AddFunds;
+import org.poo.commands.payoutRelatedCommands.CashWithdrawal;
+import org.poo.commands.payoutRelatedCommands.PayOnline;
+import org.poo.commands.payoutRelatedCommands.SendMoney;
+import org.poo.commands.payoutRelatedCommands.SplitPayment;
+import org.poo.commands.payoutRelatedCommands.WithdrawSavings;
 import org.poo.commands.userRelatedCommands.PrintTransactions;
 import org.poo.commands.userRelatedCommands.PrintUsers;
 import org.poo.commands.userRelatedCommands.UpgradePlan;
@@ -24,14 +29,23 @@ import org.poo.user.User;
 
 import java.util.ArrayList;
 
+/**
+ * Command executor visitor class.
+ */
 @Data
-public final class CommandExecutorVisitor implements CommandVisitor{
+public final class CommandExecutorVisitor implements CommandVisitor {
     private final ArrayList<User> users;
     private final ArrayNode output;
     private CommandInput commandToExecute;
     private final ArrayList<Commerciant> commerciants;
     private final ObjectMapper mapper = new ObjectMapper();
 
+    /**
+     * Constructor for the CommandExecutorVisitor class.
+     * @param users - the list of users
+     * @param output - the output array
+     * @param commerciants - the list of commerciants
+     */
     public CommandExecutorVisitor(final ArrayList<User> users, final ArrayNode output,
                                   final ArrayList<Commerciant> commerciants) {
         this.users = users;
@@ -46,7 +60,7 @@ public final class CommandExecutorVisitor implements CommandVisitor{
 
     @Override
     public void visit(final AddAccount addAccount) {
-        addAccount.execute(commandToExecute, users);
+        addAccount.execute(commandToExecute, users, commerciants);
     }
 
     @Override
@@ -96,7 +110,7 @@ public final class CommandExecutorVisitor implements CommandVisitor{
 
     @Override
     public void visit(final SplitPayment splitPayment) {
-        splitPayment.execute(commandToExecute, users);
+        splitPayment.execute(commandToExecute, users, output);
     }
 
     @Override
@@ -120,17 +134,17 @@ public final class CommandExecutorVisitor implements CommandVisitor{
     }
 
     @Override
-    public void visit(CheckCardStatus checkCardStatus) {
+    public void visit(final CheckCardStatus checkCardStatus) {
         checkCardStatus.execute(commandToExecute, users, output);
     }
 
     @Override
-    public void visit(WithdrawSavings withdrawSavings) {
+    public void visit(final WithdrawSavings withdrawSavings) {
         withdrawSavings.execute(commandToExecute, users);
     }
 
     @Override
-    public void visit(UpgradePlan upgradePlan) {
+    public void visit(final UpgradePlan upgradePlan) {
         upgradePlan.execute(commandToExecute, users, output);
     }
 

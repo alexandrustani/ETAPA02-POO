@@ -2,7 +2,11 @@ package org.poo.account;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.poo.commerciants.Commerciant;
+import org.poo.user.User;
 import org.poo.utils.Utils;
+
+import java.util.ArrayList;
 
 /**
  * SavingsAccount class
@@ -17,8 +21,9 @@ public final class SavingsAccount extends Account implements SpecialAccountFunct
      * @param currency for the account
      * @param interestRate for the account
      */
-    public SavingsAccount(final String currency, final double interestRate) {
-        super(currency, Utils.SAVINGS);
+    public SavingsAccount(final String currency, final double interestRate,
+                          final ArrayList<Commerciant> commerciants, final User owner) {
+        super(currency, Utils.SAVINGS, commerciants, owner);
         this.setInterestRate(interestRate);
     }
 

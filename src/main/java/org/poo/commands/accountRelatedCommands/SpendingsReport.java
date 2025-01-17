@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 import org.poo.account.Account;
-import org.poo.account.ClassicAccount;
 import org.poo.commands.commandsCenter.CommandVisitor;
 import org.poo.commands.commandsCenter.VisitableCommand;
 import org.poo.fileio.CommandInput;
@@ -24,9 +23,13 @@ public final class SpendingsReport implements VisitableCommand {
      * Empty constructor
      */
     public SpendingsReport() {
-
     }
 
+    /**
+     * Adds the commerciant details to the neededCommerciants list.
+     * @param neededCommerciants - the list of needed commerciants
+     * @param commerciant - the commerciant to be added
+     */
     public void addCommerciantsDetails(final ArrayList<CommerciantsDetails> neededCommerciants,
                                        final CommerciantsDetails commerciant) {
         neededCommerciants.stream()

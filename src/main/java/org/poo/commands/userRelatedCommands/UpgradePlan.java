@@ -3,16 +3,36 @@ package org.poo.commands.userRelatedCommands;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.Data;
 import org.poo.account.Account;
 import org.poo.commands.commandsCenter.CommandVisitor;
 import org.poo.commands.commandsCenter.VisitableCommand;
 import org.poo.exchangeRates.ExchangeRates;
 import org.poo.fileio.CommandInput;
 import org.poo.user.User;
+import org.poo.utils.Utils;
 
 import java.util.ArrayList;
 
-public class UpgradePlan implements VisitableCommand {
+/**
+ * Upgrade plan command class.
+ */
+
+@Data
+public final class UpgradePlan implements VisitableCommand {
+    /**
+     * Empty constructor
+     */
+    public UpgradePlan() {
+
+    }
+
+    /**
+     * Execute the upgradePlan command.
+     * @param command - the command to be executed
+     * @param users - the list of users
+     * @param output - the output array
+     */
     public void execute(final CommandInput command, final ArrayList<User> users,
                         final ArrayNode output) {
         User neededUser = null;
@@ -43,12 +63,12 @@ public class UpgradePlan implements VisitableCommand {
         }
 
         double fromRon = ExchangeRates.findCurrency("RON", neededAccount.getCurrency());
-
         switch (command.getNewPlanType()) {
             case "silver" -> {
                 if (neededUser.getPlan().equals("standard")
                         || neededUser.getPlan().equals("student")) {
-                    if (neededAccount.getBalance() < 100 * fromRon) {
+                    if (neededAccount.getBalance()
+                            < Utils.FEE_STUDENT_OR_STANDARD_TO_SILVER * fromRon) {
                         ObjectMapper mapper = new ObjectMapper();
                         ObjectNode error = mapper.createObjectNode()
                                 .put("description", "Insufficient funds")
@@ -58,14 +78,16 @@ public class UpgradePlan implements VisitableCommand {
                         return;
                     }
 
-                    neededAccount.subtractAmountFromBalance(100 * fromRon);
+                    neededAccount.
+                            subtractAmountFromBalance(Utils.FEE_STUDENT_OR_STANDARD_TO_SILVER
+                                                        * fromRon);
                     neededUser.setPlan("silver");
                 }
             }
 
             case "gold" -> {
                 if (neededUser.getPlan().equals("silver")) {
-                    if (neededAccount.getBalance() < 250 * fromRon) {
+                    if (neededAccount.getBalance() < Utils.FEE_SILVER_TO_GOLD * fromRon) {
                         ObjectMapper mapper = new ObjectMapper();
                         ObjectNode error = mapper.createObjectNode()
                                 .put("description", "Insufficient funds")
@@ -75,13 +97,14 @@ public class UpgradePlan implements VisitableCommand {
                         return;
                     }
 
-                    neededAccount.subtractAmountFromBalance(250 * fromRon);
+                    neededAccount.subtractAmountFromBalance(Utils.FEE_SILVER_TO_GOLD * fromRon);
                     neededUser.setPlan("gold");
                 }
 
                 if (neededUser.getPlan().equals("standard")
                         || neededUser.getPlan().equals("student")) {
-                    if (neededAccount.getBalance() < 350 * fromRon) {
+                    if (neededAccount.getBalance()
+                            < Utils.FEE_STUDENT_OR_STANDARD_TO_GOLD * fromRon) {
                         ObjectMapper mapper = new ObjectMapper();
                         ObjectNode error = mapper.createObjectNode()
                                 .put("description", "Insufficient funds")
@@ -90,9 +113,16 @@ public class UpgradePlan implements VisitableCommand {
 
                         return;
                     }
-                    neededAccount.subtractAmountFromBalance(350 * fromRon);
+
+                    neededAccount.
+                            subtractAmountFromBalance(Utils.FEE_STUDENT_OR_STANDARD_TO_GOLD
+                                                        * fromRon);
                     neededUser.setPlan("gold");
                 }
+            }
+
+            default -> {
+                return;
             }
         }
 
@@ -104,7 +134,8 @@ public class UpgradePlan implements VisitableCommand {
                 .put("timestamp", command.getTimestamp()));
     }
 
-    public void accept(CommandVisitor command) {
+    @Override
+    public void accept(final CommandVisitor command) {
         command.visit(this);
     }
 }

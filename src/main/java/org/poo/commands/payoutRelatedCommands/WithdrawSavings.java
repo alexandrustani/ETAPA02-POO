@@ -8,25 +8,44 @@ import org.poo.commands.commandsCenter.VisitableCommand;
 import org.poo.fileio.CommandInput;
 import org.poo.user.User;
 import org.poo.account.Account;
+import org.poo.utils.Utils;
 
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
+/**
+ * Withdraw savings command class.
+ */
 
 @Data
 public final class WithdrawSavings implements VisitableCommand {
-    public WithdrawSavings() {}
+    /**
+     * Empty constructor
+     */
+    public WithdrawSavings() {
 
+    }
+
+    /**
+     * Check if the user is of age.
+     * @param birthDate - the birth date of the user
+     * @return true if the user is of age, false otherwise
+     */
     private boolean isUserOfAge(final String birthDate) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate birthDateLocal = LocalDate.parse(birthDate, formatter);
         LocalDate currentDate = LocalDate.now();
         Period age = Period.between(birthDateLocal, currentDate);
-        return age.getYears() >= 21;
+        return age.getYears() >= Utils.AGE_LIMIT;
     }
 
+    /**
+     * Execute the withdrawSavings command.
+     * @param commandInput - the command to be executed
+     * @param users - the list of users
+     */
     public void execute(final CommandInput commandInput, final ArrayList<User> users) {
         User neededUser = null;
         Account neededAccount = null;
@@ -36,7 +55,8 @@ public final class WithdrawSavings implements VisitableCommand {
 
         neededUser = users.stream()
                 .filter(user -> user.getAccounts().stream()
-                        .anyMatch(account -> account.getAccountIBAN().equals(commandInput.getAccount())))
+                        .anyMatch(account
+                                    -> account.getAccountIBAN().equals(commandInput.getAccount())))
                 .findFirst()
                 .orElse(null);
 
@@ -77,7 +97,7 @@ public final class WithdrawSavings implements VisitableCommand {
     }
 
     @Override
-    public void accept(CommandVisitor command) {
+    public void accept(final CommandVisitor command) {
         command.visit(this);
     }
 }

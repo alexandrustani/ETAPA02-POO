@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 import org.poo.commands.commandsCenter.VisitableCommand;
+import org.poo.commerciants.Commerciant;
 import org.poo.fileio.CommandInput;
 import org.poo.user.User;
 import org.poo.account.FactoryOfAccount;
@@ -28,7 +29,8 @@ public final class AddAccount implements VisitableCommand {
      * @param command to execute
      * @param users to add account
      */
-    public void execute(final CommandInput command, final ArrayList<User> users) {
+    public void execute(final CommandInput command, final ArrayList<User> users,
+                        final ArrayList<Commerciant> myCommerciants) {
         User neededUser = null;
 
         for (User user : users) {
@@ -42,7 +44,7 @@ public final class AddAccount implements VisitableCommand {
             throw new IllegalArgumentException("User not found");
         }
 
-        neededUser.addAccount(FactoryOfAccount.createAccount(command));
+        neededUser.addAccount(FactoryOfAccount.createAccount(command, myCommerciants, neededUser));
 
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode transaction = mapper.createObjectNode();

@@ -76,7 +76,6 @@ public final class CheckCardStatus implements VisitableCommand {
             frozen.put("description",
                     "You have reached the minimum amount of funds, the card will be frozen");
 
-            neededUser.addTransaction(frozen);
             neededAccount.addTransaction(frozen);
 
             return;

@@ -1,9 +1,12 @@
 package org.poo.user;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Getter;
 import lombok.Setter;
 import org.poo.account.Account;
+import org.poo.utils.Utils;
+
 import java.util.ArrayList;
 
 /**
@@ -16,7 +19,6 @@ public class User {
     private String lastName;
     private String email;
     private ArrayList<Account> accounts;
-    private ArrayList<ObjectNode> transactions;
     private String birthday;
     private String occupation;
     private String plan;
@@ -34,7 +36,6 @@ public class User {
         this.setLastName(lastName);
         this.setEmail(email);
         this.setAccounts(new ArrayList<>());
-        this.setTransactions(new ArrayList<>());
         this.setBirthday(birthday);
         this.setOccupation(occupation);
         this.setNrOfExpensiveTransactions(0);
@@ -55,23 +56,32 @@ public class User {
     }
 
     /**
-     * Add transaction to user
-     * @param transaction to add
-     */
-    public void addTransaction(final ObjectNode transaction) {
-        this.getTransactions().add(transaction);
-    }
-
-    /**
      * Increment the number of expensive transactions
      */
-    public void checkTransactions(final double amount) {
-        if (this.getPlan().equals("silver") && this.getNrOfExpensiveTransactions() >= 5) {
-            this.setPlan("gold");
+    public void checkTransactions(final double amount,
+                                  final String accountIBAN, final Integer timestamp) {
+        if (amount >= Utils.MEDIUM_LIMIT) {
+            this.setNrOfExpensiveTransactions(this.getNrOfExpensiveTransactions() + 1);
         }
 
-        if (amount > 300) {
-            this.setNrOfExpensiveTransactions(this.getNrOfExpensiveTransactions() + 1);
+        if (this.getPlan().equals("silver")
+                && this.getNrOfExpensiveTransactions() >= Utils.CLOTHES_TRANSACTIONS) {
+            this.setPlan("gold");
+
+            for (Account account : this.getAccounts()) {
+                if (account.getAccountIBAN().equals(accountIBAN)) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    ObjectNode transaction = mapper.createObjectNode()
+                        .put("accountIBAN", accountIBAN)
+                            .put("newPlanType", "gold")
+                            .put("timestamp", timestamp)
+                            .put("description", "Upgrade plan");
+
+                    account.addTransaction(transaction);
+
+                    break;
+                }
+            }
         }
     }
 }

@@ -1,5 +1,8 @@
 package org.poo.commands.commandsCenter;
 
+/**
+ * Interface for a visitable command.
+ */
 public interface VisitableCommand {
     /**
      * Accepts a visitor.
