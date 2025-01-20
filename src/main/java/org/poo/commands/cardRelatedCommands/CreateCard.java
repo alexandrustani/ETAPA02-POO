@@ -1,6 +1,7 @@
 package org.poo.commands.cardRelatedCommands;
 
 import lombok.Data;
+import org.poo.account.BusinessAccount;
 import org.poo.card.Card;
 import org.poo.commands.commandsCenter.CommandVisitor;
 import org.poo.commands.commandsCenter.VisitableCommand;
@@ -41,26 +42,35 @@ public final class CreateCard implements VisitableCommand {
      * @param users to create card
      */
     public void execute(final CommandInput command, final ArrayList<User> users) {
-        Account neededAccount = null;
-        User neededUser = null;
+        Account neededAccount = users.stream()
+                .flatMap(user -> user.getAccounts().stream())
+                .filter(account -> account.getAccountIBAN().equals(command.getAccount()))
+                .findFirst()
+                .orElse(null);
+        User neededUser = users.stream()
+                .filter(user -> user.getEmail().equals(command.getEmail()))
+                .findFirst()
+                .orElse(null);
         String cardType = createCardType(command);
 
-        for (User user : users) {
-            for (Account account : user.getAccounts()) {
-                if (account.getAccountIBAN().equals(command.getAccount())
-                    && user.getEmail().equals(command.getEmail())) {
-                    neededAccount = account;
-                    neededUser = user;
-                    break;
-                }
-            }
-        }
-
-        if (neededAccount == null) {
+        if (neededAccount == null || neededUser == null) {
             return;
         }
 
-        neededAccount.getCards().add(new Card(cardType));
+        Card newCard = new Card(cardType);
+
+        if (neededAccount.getAccountType().equals("business")) {
+            BusinessAccount businessAccount = (BusinessAccount) neededAccount;
+
+            if (!businessAccount.getOwner().equals(neededUser)
+                    && !businessAccount.getEmployees().containsKey(neededUser)) {
+                return;
+            }
+
+            businessAccount.getCardsOfEmployees().put(neededUser, newCard);
+        }
+
+        neededAccount.getCards().add(newCard);
 
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode transaction = mapper.createObjectNode();

@@ -21,7 +21,10 @@ public final class ChangeInterestRate implements VisitableCommand {
     }
 
     /**
-     * Executes the command.
+     * Execute the changeInterestRate command.
+     * @param command - the command to be executed
+     * @param users - the list of users
+     * @param output - the output array
      */
     public void execute(final CommandInput command, final ArrayList<User> users,
                                final ArrayNode output) {

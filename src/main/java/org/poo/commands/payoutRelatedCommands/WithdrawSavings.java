@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 import org.poo.commands.commandsCenter.CommandVisitor;
 import org.poo.commands.commandsCenter.VisitableCommand;
+import org.poo.exchangeRates.ExchangeRates;
 import org.poo.fileio.CommandInput;
 import org.poo.user.User;
 import org.poo.account.Account;
@@ -47,8 +48,8 @@ public final class WithdrawSavings implements VisitableCommand {
      * @param users - the list of users
      */
     public void execute(final CommandInput commandInput, final ArrayList<User> users) {
-        User neededUser = null;
-        Account neededAccount = null;
+        User neededUser;
+        Account neededAccount;
 
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode commandOutput = mapper.createObjectNode();
@@ -65,9 +66,11 @@ public final class WithdrawSavings implements VisitableCommand {
                     .filter(account -> account.getAccountIBAN().equals(commandInput.getAccount()))
                     .findFirst()
                     .orElse(null);
+        } else {
+            return;
         }
 
-        if (neededUser == null) {
+        if (neededAccount == null) {
             return;
         }
 
@@ -81,7 +84,8 @@ public final class WithdrawSavings implements VisitableCommand {
         }
 
         Account classicAccount = neededUser.getAccounts().stream()
-                .filter(account -> account.getAccountType().equals("classic"))
+                .filter(account -> account.getAccountType().equals("classic")
+                        && account.getCurrency().equals(commandInput.getCurrency()))
                 .findFirst()
                 .orElse(null);
 
@@ -94,6 +98,33 @@ public final class WithdrawSavings implements VisitableCommand {
 
             return;
         }
+
+        double exchangeRate = ExchangeRates.
+                findCurrency(commandInput.getCurrency(),
+                             classicAccount.getCurrency());
+
+        if (neededAccount.getBalance() < commandInput.getAmount() * exchangeRate) {
+            ObjectNode transactionNode = mapper.createObjectNode()
+                    .put("timestamp", commandInput.getTimestamp())
+                    .put("description", "Insufficient funds");
+
+            neededAccount.addTransaction(transactionNode);
+
+            return;
+        }
+
+        neededAccount.subtractAmountFromBalance(commandInput.getAmount() * exchangeRate);
+        classicAccount.addAmountToBalance(commandInput.getAmount());
+
+        ObjectNode transactionNode = mapper.createObjectNode()
+                .put("timestamp", commandInput.getTimestamp())
+                .put("description", "Savings withdrawal")
+                .put("amount", commandInput.getAmount())
+                .put("classicAccountIBAN", classicAccount.getAccountIBAN())
+                .put("savingsAccountIBAN", neededAccount.getAccountIBAN());
+
+        neededAccount.addTransaction(transactionNode);
+        classicAccount.addTransaction(transactionNode);
     }
 
     @Override

@@ -56,7 +56,11 @@ public class User {
     }
 
     /**
-     * Increment the number of expensive transactions
+     * Check if the user has a number of necessary expensive transactions
+     * to upgrade the plan(only from silver to gold).
+     * @param amount - the amount of the transaction
+     * @param accountIBAN - the account IBAN
+     * @param timestamp - the timestamp of the transaction
      */
     public void checkTransactions(final double amount,
                                   final String accountIBAN, final Integer timestamp) {

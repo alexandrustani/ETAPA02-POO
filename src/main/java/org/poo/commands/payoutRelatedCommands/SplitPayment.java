@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import org.poo.exchangeRates.ExchangeRates;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.poo.utils.Utils;
 
 /**
  * Split command class.
@@ -26,7 +25,7 @@ final class SplitCommand {
      * Constructor for the SplitCommand class.
      * @param newCommand - the command to be split
      */
-    public SplitCommand(final CommandInput newCommand) {
+    SplitCommand(final CommandInput newCommand) {
         this.setSplit(newCommand);
 
         this.setAccountsForSplit(new HashMap<>());
@@ -50,24 +49,21 @@ public final class SplitPayment implements VisitableCommand {
 
     }
 
-    private static final ArrayList<SplitCommand> commands = new ArrayList<>();
+    private static final ArrayList<SplitCommand> COMMANDS = new ArrayList<>();
 
     /**
      * Checks if the accounts can pay the specified amounts.
      * @param accounts - the list of accounts to check
      * @param amountPerAccount - the list of amounts to be paid from each account
      * @param exchangeRates - the list of exchange rates for each account
-     * @param taxes - the list of taxes for each account
      * @return the account with insufficient funds, or null if all accounts can pay
      */
     public Account canPay(final ArrayList<Account> accounts,
                           final ArrayList<Double> amountPerAccount,
-                          final ArrayList<Double> exchangeRates,
-                          final ArrayList<Double> taxes,
-                          final CommandInput command) {
+                          final ArrayList<Double> exchangeRates) {
         for (int i = 0; i < accounts.size(); i++) {
-            if (accounts.get(i).getBalance() <
-                    amountPerAccount.get(i) * exchangeRates.get(i) + taxes.get(i)) {
+            if (accounts.get(i).getBalance()
+                    < amountPerAccount.get(i) * exchangeRates.get(i)) {
                 return accounts.get(i);
             }
         }
@@ -76,49 +72,13 @@ public final class SplitPayment implements VisitableCommand {
     }
 
     /**
-     * Get the taxes for each account.
+     * Accepts the payment.
+     * @param command - the command to be executed
      * @param users - the list of users
-     * @param accounts - the list of accounts
-     * @param commandCurrency - the currency of the command
-     * @param exchangeRates - the list of exchange rates
-     * @param amountPerAccount - the list of amounts to be paid from each account
-     * @return the list of taxes for each account
+     * @param output - the output array
      */
-    public ArrayList<Double> getTaxes(final ArrayList<User> users,
-                                      final ArrayList<Account> accounts,
-                                      final String commandCurrency,
-                                      final ArrayList<Double> exchangeRates,
-                                      final ArrayList<Double> amountPerAccount) {
-        for (Account account : accounts) {
-            exchangeRates.add(ExchangeRates.findCurrency(commandCurrency,
-                                                         account.getCurrency()));
-        }
-
-        double toRon = ExchangeRates.findCurrency(commandCurrency, "RON");
-
-        ArrayList<Double> commisions = new ArrayList<>();
-
-        for (int i = 0; i < accounts.size(); i++) {
-            double tax = Utils.INITIAL_BALANCE;
-            switch (users.get(i).getPlan()) {
-                case "standard" -> tax = (Utils.MEDIUM_STUDENT_RATE
-                        * amountPerAccount.get(i)) * exchangeRates.get(i);
-                case "silver" -> {
-                    if (amountPerAccount.get(i) * toRon > Utils.LARGE_LIMIT) {
-                        tax = (Utils.SMALL_STUDENT_RATE * amountPerAccount.get(i)) * exchangeRates.get(i);
-                    }
-                }
-                default -> tax = Utils.INITIAL_BALANCE;
-            }
-
-            commisions.add(tax);
-        }
-
-        return commisions;
-    }
-
     public void acceptPayment(final CommandInput command, final ArrayList<User> users,
-                              ArrayNode output) {
+                              final ArrayNode output) {
         SplitCommand commandToBeDone = null;
         User neededUser = null;
 
@@ -144,16 +104,20 @@ public final class SplitPayment implements VisitableCommand {
             return;
         }
 
-        for (SplitCommand splitCommand : commands) {
+        for (SplitCommand splitCommand : COMMANDS) {
             for (Account account : neededUser.getAccounts()) {
                 if (splitCommand.getAccountsForSplit().get(account.getAccountIBAN()) != null
-                        && !splitCommand.getAccountsForSplit().get(account.getAccountIBAN())) {
+                        && !splitCommand.getAccountsForSplit().get(account.getAccountIBAN())
+                    && splitCommand.getSplit().getSplitPaymentType()
+                        .equals(command.getSplitPaymentType())) {
                     splitCommand.getAccountsForSplit().put(account.getAccountIBAN(), true);
                 }
             }
 
             if (splitCommand.getAccountsForSplit().values().
-                    stream().allMatch(Boolean::booleanValue)) {
+                    stream().allMatch(Boolean::booleanValue)
+                    && splitCommand.getSplit().getSplitPaymentType()
+                    .equals(command.getSplitPaymentType())) {
                 commandToBeDone = splitCommand;
 
                 break;
@@ -162,12 +126,18 @@ public final class SplitPayment implements VisitableCommand {
 
         if (commandToBeDone != null) {
             doSplitPayment(commandToBeDone.getSplit(), users);
-            commands.remove(commandToBeDone);
+            COMMANDS.remove(commandToBeDone);
         }
     }
 
-    public void rejectPayment(final CommandInput command, final ArrayList<User> users
-            , final ArrayNode output) {
+    /**
+     * Rejects the payment.
+     * @param command - the command to be executed
+     * @param users - the list of users
+     * @param output - the output array
+     */
+    public void rejectPayment(final CommandInput command, final ArrayList<User> users,
+                              final ArrayNode output) {
         SplitCommand commandToBeDone = null;
         User neededUser = null;
 
@@ -193,9 +163,11 @@ public final class SplitPayment implements VisitableCommand {
             return;
         }
 
-        for (SplitCommand splitCommand : commands) {
+        for (SplitCommand splitCommand : COMMANDS) {
             for (Account account : neededUser.getAccounts()) {
-                if (splitCommand.getAccountsForSplit().containsKey(account.getAccountIBAN())) {
+                if (splitCommand.getAccountsForSplit().containsKey(account.getAccountIBAN())
+                    && splitCommand.getSplit().getSplitPaymentType()
+                        .equals(command.getSplitPaymentType())) {
                     commandToBeDone = splitCommand;
 
                     break;
@@ -207,21 +179,23 @@ public final class SplitPayment implements VisitableCommand {
         ObjectNode transaction = mapper.createObjectNode();
 
         if (commandToBeDone != null) {
-            commands.remove(commandToBeDone);
+            COMMANDS.remove(commandToBeDone);
         } else {
             return;
         }
 
-        if (commandToBeDone.getSplit().getSplitPaymentType().equals("equal")){
+        if (commandToBeDone.getSplit().getSplitPaymentType().equals("equal")) {
             transaction.put("amount", commandToBeDone.getSplit().getAmount()
                     / commandToBeDone.getSplit().getAccounts().size());
         } else {
-            transaction.set("amountForUsers", mapper.valueToTree(commandToBeDone.getSplit().getAmountForUsers()));
+            transaction.set("amountForUsers", mapper.
+                    valueToTree(commandToBeDone.getSplit().getAmountForUsers()));
         }
         transaction.put("currency", commandToBeDone.getSplit().getCurrency());
         transaction.put("description", String.format("Split payment of %.2f %s",
                 commandToBeDone.getSplit().getAmount(), commandToBeDone.getSplit().getCurrency()));
-        transaction.set("involvedAccounts", mapper.valueToTree(commandToBeDone.getSplit().getAccounts()));
+        transaction.set("involvedAccounts",
+                mapper.valueToTree(commandToBeDone.getSplit().getAccounts()));
         transaction.put("timestamp", commandToBeDone.getSplit().getTimestamp());
         transaction.put("splitPaymentType", commandToBeDone.getSplit().getSplitPaymentType());
         transaction.put("error", "One user rejected the payment.");
@@ -246,7 +220,7 @@ public final class SplitPayment implements VisitableCommand {
                         final ArrayNode output) {
         switch (command.getCommand()) {
             case "splitPayment" -> {
-                commands.add(new SplitCommand(command));
+                COMMANDS.add(new SplitCommand(command));
             }
 
             case "acceptSplitPayment" -> {
@@ -296,15 +270,17 @@ public final class SplitPayment implements VisitableCommand {
             }));
         }
 
-        ArrayList<Double> taxes = getTaxes(usersToPay, accountsToPay, command.getCurrency(),
-                                            exchangeRates, amountsPerUser);
+        for (Account account : accountsToPay) {
+            exchangeRates.add(ExchangeRates.findCurrency(command.getCurrency(),
+                                                         account.getCurrency()));
+        }
 
-        Account insufficientFunds = canPay(accountsToPay, amountsPerUser, exchangeRates, taxes, command);
+        Account insufficientFunds = canPay(accountsToPay, amountsPerUser, exchangeRates);
 
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode transaction = mapper.createObjectNode();
 
-        if (command.getSplitPaymentType().equals("equal")){
+        if (command.getSplitPaymentType().equals("equal")) {
             transaction.put("amount", neededAmountPerAccount);
         } else {
             transaction.set("amountForUsers", mapper.valueToTree(command.getAmountForUsers()));
@@ -330,17 +306,17 @@ public final class SplitPayment implements VisitableCommand {
 
         for (int i = 0; i < accountsToPay.size(); i++) {
             accountsToPay.get(i).subtractAmountFromBalance(amountsPerUser.get(i)
-                                                            * exchangeRates.get(i) + taxes.get(i));
+                                                            * exchangeRates.get(i));
 
             accountsToPay.get(i).addTransaction(transaction);
         }
     }
 
     /**
-     * Resets the split commands list by clearing all entries.
+     * Resets the split COMMANDS list by clearing all entries.
      */
     public static void resetCommands() {
-        commands.clear();
+        COMMANDS.clear();
     }
 
     @Override

@@ -20,6 +20,8 @@ public final class SavingsAccount extends Account implements SpecialAccountFunct
      * Constructor for SavingsAccount
      * @param currency for the account
      * @param interestRate for the account
+     * @param commerciants for the account
+     * @param owner for the account
      */
     public SavingsAccount(final String currency, final double interestRate,
                           final ArrayList<Commerciant> commerciants, final User owner) {

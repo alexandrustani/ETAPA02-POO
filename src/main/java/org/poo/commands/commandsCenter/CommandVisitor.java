@@ -1,11 +1,15 @@
 package org.poo.commands.commandsCenter;
 
+import org.poo.commands.accountRelatedCommands.AddNewBusinessAssociate;
 import org.poo.commands.accountRelatedCommands.AddInterest;
-import org.poo.commands.accountRelatedCommands.AddAccount;
+import org.poo.commands.accountRelatedCommands.ChangeDepositLimit;
 import org.poo.commands.accountRelatedCommands.ChangeInterestRate;
+import org.poo.commands.accountRelatedCommands.ChangeSpendingLimit;
 import org.poo.commands.accountRelatedCommands.DeleteAccount;
-import org.poo.commands.accountRelatedCommands.SetMinimumBalance;
 import org.poo.commands.accountRelatedCommands.SetAlias;
+import org.poo.commands.accountRelatedCommands.SetMinimumBalance;
+import org.poo.commands.accountRelatedCommands.AddAccount;
+import org.poo.commands.accountRelatedCommands.BusinessReport;
 import org.poo.commands.accountRelatedCommands.Report;
 import org.poo.commands.accountRelatedCommands.SpendingsReport;
 import org.poo.commands.cardRelatedCommands.CheckCardStatus;
@@ -144,4 +148,28 @@ public interface CommandVisitor {
      * @param cashWithdrawal - the CashWithdrawal command to visit
      */
     void visit(CashWithdrawal cashWithdrawal);
+
+    /**
+     * Visits a AddNewBusinnesAssociate command.
+     * @param addNewBusinessAssociate - the AddNewBusinessAssociate command to visit
+     */
+    void visit(AddNewBusinessAssociate addNewBusinessAssociate);
+
+    /**
+     * Visits a BusinessReport command.
+     * @param businessReport - the BusinessReport command to visit
+     */
+    void visit(BusinessReport businessReport);
+
+    /**
+     * Visits a ChangeSpendingLimit Command.
+     * @param command - the ChangeSpendingLimit command to visit
+     */
+    void visit(ChangeSpendingLimit command);
+
+    /**
+     * Visits a ChangeDepositLimit Command.
+     * @param command - the ChangeDepositLimit command to visit
+     */
+    void visit(ChangeDepositLimit command);
 }

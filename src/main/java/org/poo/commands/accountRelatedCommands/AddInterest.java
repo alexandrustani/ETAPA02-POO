@@ -28,6 +28,7 @@ public final class AddInterest implements VisitableCommand {
      * Execute the addInterest command.
      * @param command - the command to be executed
      * @param users - the list of users
+     * @param output - the output array
      */
     public void execute(final CommandInput command, final ArrayList<User> users,
                                final ArrayNode output) {

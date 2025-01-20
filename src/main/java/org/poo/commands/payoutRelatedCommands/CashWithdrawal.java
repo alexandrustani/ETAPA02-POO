@@ -28,24 +28,14 @@ public final class CashWithdrawal implements VisitableCommand {
      * Execute the cashWithdrawal command.
      * @param command - the command to be executed
      * @param users - the list of users
+     * @param output - the output array
      */
     public void execute(final CommandInput command, final ArrayList<User> users,
                         final ArrayNode output) {
-        User neededUser = null;
-        Account neededAccount = null;
-        Card neededCard = null;
-
-        for (User user : users) {
-            for (Account account : user.getAccounts()) {
-                for (Card card : account.getCards()) {
-                    if (card.getCardNumber().equals(command.getCardNumber())) {
-                        neededUser = user;
-                        neededAccount = account;
-                        neededCard = card;
-                    }
-                }
-            }
-        }
+        User neededUser = users.stream()
+                .filter(user -> user.getEmail().equals(command.getEmail()))
+                .findFirst()
+                .orElse(null);
 
         if (neededUser == null) {
             ObjectMapper mapper = new ObjectMapper();
@@ -53,7 +43,56 @@ public final class CashWithdrawal implements VisitableCommand {
 
             commandNode.put("command", "cashWithdrawal");
             ObjectNode error = mapper.createObjectNode();
+
+            error.put("description", "User not found");
+
+            error.put("timestamp", command.getTimestamp());
+            commandNode.set("output", error);
+            commandNode.put("timestamp", command.getTimestamp());
+
+            output.add(commandNode);
+            return;
+        }
+
+        Account neededAccount = null;
+        Card neededCard = null;
+
+        for (var account : neededUser.getAccounts()) {
+            for (Card card : account.getCards()) {
+                if (card.getCardNumber().equals(command.getCardNumber())) {
+                    neededCard = card;
+                    neededAccount = account;
+                    break;
+                }
+            }
+        }
+
+        if (neededAccount == null) {
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode commandNode = mapper.createObjectNode();
+
+            commandNode.put("command", "cashWithdrawal");
+            ObjectNode error = mapper.createObjectNode();
+
             error.put("description", "Card not found");
+
+            error.put("timestamp", command.getTimestamp());
+            commandNode.set("output", error);
+            commandNode.put("timestamp", command.getTimestamp());
+
+            output.add(commandNode);
+            return;
+        }
+
+        if (neededCard.getCardStatus().equals("frozen")) {
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode commandNode = mapper.createObjectNode();
+
+            commandNode.put("command", "cashWithdrawal");
+            ObjectNode error = mapper.createObjectNode();
+
+            error.put("description", "Card is frozen");
+
             error.put("timestamp", command.getTimestamp());
             commandNode.set("output", error);
             commandNode.put("timestamp", command.getTimestamp());
@@ -75,12 +114,6 @@ public final class CashWithdrawal implements VisitableCommand {
             default -> taxes = Utils.INITIAL_BALANCE;
         }
 
-        System.out.println("Taxes: " + taxes);
-        System.out.println("amount from Ron " + command.getAmount() * fromRon);
-        System.out.println("balance " + neededAccount.getBalance());
-        System.out.println("account " + neededAccount.getAccountIBAN());
-        System.out.println("user " + neededAccount.getOwner().getEmail());
-
         if (neededAccount.getBalance() < command.getAmount() * fromRon + taxes) {
             ObjectMapper mapper = new ObjectMapper();
             ObjectNode transactionNode = mapper.createObjectNode()
@@ -100,7 +133,6 @@ public final class CashWithdrawal implements VisitableCommand {
         neededAccount.addTransaction(transactionNode);
 
         neededAccount.subtractAmountFromBalance(command.getAmount() * fromRon + taxes);
-        System.out.println("after cash withdrawal "+ neededAccount.getBalance());
     }
 
     @Override

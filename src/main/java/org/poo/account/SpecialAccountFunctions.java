@@ -1,5 +1,7 @@
 package org.poo.account;
 
+import org.poo.user.User;
+
 /**
  * Interface that represents a commerciant.
  */
@@ -25,6 +27,15 @@ public interface SpecialAccountFunctions {
      * Add Interest rate to the account.
      */
     default void addInterestRate() {
+        throw new UnsupportedOperationException("Not for this kind of account");
+    }
+
+    /**
+     * Add an employee to the account.
+     * @param employee - the employee to be added
+     * @param role - the role of the employee
+     */
+    default void addEmployee(User employee, String role) {
         throw new UnsupportedOperationException("Not for this kind of account");
     }
 }

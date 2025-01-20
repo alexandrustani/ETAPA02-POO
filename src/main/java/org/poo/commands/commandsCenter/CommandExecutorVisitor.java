@@ -5,11 +5,15 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.Data;
 import org.poo.commands.accountRelatedCommands.AddAccount;
 import org.poo.commands.accountRelatedCommands.AddInterest;
+import org.poo.commands.accountRelatedCommands.AddNewBusinessAssociate;
+import org.poo.commands.accountRelatedCommands.BusinessReport;
+import org.poo.commands.accountRelatedCommands.ChangeDepositLimit;
 import org.poo.commands.accountRelatedCommands.ChangeInterestRate;
+import org.poo.commands.accountRelatedCommands.ChangeSpendingLimit;
 import org.poo.commands.accountRelatedCommands.DeleteAccount;
-import org.poo.commands.accountRelatedCommands.SetMinimumBalance;
 import org.poo.commands.accountRelatedCommands.Report;
 import org.poo.commands.accountRelatedCommands.SetAlias;
+import org.poo.commands.accountRelatedCommands.SetMinimumBalance;
 import org.poo.commands.accountRelatedCommands.SpendingsReport;
 import org.poo.commands.cardRelatedCommands.CheckCardStatus;
 import org.poo.commands.cardRelatedCommands.CreateCard;
@@ -90,7 +94,7 @@ public final class CommandExecutorVisitor implements CommandVisitor {
 
     @Override
     public void visit(final SendMoney sendMoney) {
-        sendMoney.execute(commandToExecute, users, output);
+        sendMoney.execute(commandToExecute, users, output, commerciants);
     }
 
     @Override
@@ -151,5 +155,25 @@ public final class CommandExecutorVisitor implements CommandVisitor {
     @Override
     public void visit(final CashWithdrawal cashWithdrawal) {
         cashWithdrawal.execute(commandToExecute, users, output);
+    }
+
+    @Override
+    public void visit(final AddNewBusinessAssociate addNewBusinessAssociate) {
+        addNewBusinessAssociate.execute(commandToExecute, users);
+    }
+
+    @Override
+    public void visit(final BusinessReport businessReport) {
+        businessReport.execute(commandToExecute, users, output);
+    }
+
+    @Override
+    public void visit(final ChangeSpendingLimit changeSpendingLimit) {
+        changeSpendingLimit.execute(commandToExecute, users, output);
+    }
+
+    @Override
+    public void visit(final ChangeDepositLimit changeDepositLimit) {
+        changeDepositLimit.execute(commandToExecute, users, output);
     }
 }

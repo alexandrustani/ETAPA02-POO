@@ -2,16 +2,20 @@ package org.poo.ebanking;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.Data;
+import org.poo.commands.accountRelatedCommands.AddAccount;
+import org.poo.commands.accountRelatedCommands.AddInterest;
+import org.poo.commands.accountRelatedCommands.BusinessReport;
+import org.poo.commands.accountRelatedCommands.ChangeDepositLimit;
+import org.poo.commands.accountRelatedCommands.ChangeInterestRate;
+import org.poo.commands.accountRelatedCommands.ChangeSpendingLimit;
+import org.poo.commands.accountRelatedCommands.DeleteAccount;
+import org.poo.commands.accountRelatedCommands.Report;
+import org.poo.commands.accountRelatedCommands.SetAlias;
+import org.poo.commands.accountRelatedCommands.SetMinimumBalance;
+import org.poo.commands.accountRelatedCommands.SpendingsReport;
+import org.poo.commands.accountRelatedCommands.AddNewBusinessAssociate;
 import org.poo.commands.commandsCenter.CommandExecutorVisitor;
 import org.poo.commands.commandsCenter.VisitableCommand;
-import org.poo.commands.accountRelatedCommands.AddInterest;
-import org.poo.commands.accountRelatedCommands.AddAccount;
-import org.poo.commands.accountRelatedCommands.ChangeInterestRate;
-import org.poo.commands.accountRelatedCommands.DeleteAccount;
-import org.poo.commands.accountRelatedCommands.SetMinimumBalance;
-import org.poo.commands.accountRelatedCommands.SetAlias;
-import org.poo.commands.accountRelatedCommands.Report;
-import org.poo.commands.accountRelatedCommands.SpendingsReport;
 import org.poo.commands.cardRelatedCommands.CheckCardStatus;
 import org.poo.commands.cardRelatedCommands.CreateCard;
 import org.poo.commands.cardRelatedCommands.DeleteCard;
@@ -109,9 +113,7 @@ public final class Ebanking {
         for (CommandInput commandInput : input.getCommands()) {
             visitor.setCommandToExecute(commandInput);
             VisitableCommand command = createCommand(commandInput);
-            if (command != null) {
-                command.accept(visitor);
-            }
+            command.accept(visitor);
         }
     }
 
@@ -130,7 +132,7 @@ public final class Ebanking {
             case "payOnline" -> new PayOnline();
             case "sendMoney" -> new SendMoney();
             case "printTransactions" -> new PrintTransactions();
-            case "setMinBalance" -> new SetMinimumBalance();
+            case "setMinimumBalance" -> new SetMinimumBalance();
             case "checkCardStatus" -> new CheckCardStatus();
             case "changeInterestRate" -> new ChangeInterestRate();
             case "splitPayment", "acceptSplitPayment", "rejectSplitPayment" -> new SplitPayment();
@@ -142,7 +144,11 @@ public final class Ebanking {
             case "withdrawSavings" -> new WithdrawSavings();
             case "upgradePlan" -> new UpgradePlan();
             case "cashWithdrawal" -> new CashWithdrawal();
-            default -> null;
+            case "businessReport" -> new BusinessReport();
+            case "addNewBusinessAssociate" -> new AddNewBusinessAssociate();
+            case "changeSpendingLimit" -> new ChangeSpendingLimit();
+            case "changeDepositLimit" -> new ChangeDepositLimit();
+            default -> throw new IllegalArgumentException("Invalid command");
         };
     }
 

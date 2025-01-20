@@ -62,6 +62,18 @@ public final class UpgradePlan implements VisitableCommand {
             return;
         }
 
+        if (neededUser.getPlan().equals(command.getNewPlanType())) {
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectNode transaction = mapper.createObjectNode()
+                    .put("description", "The user already has the "
+                            + command.getNewPlanType() + " plan.")
+                    .put("timestamp", command.getTimestamp());
+
+            neededAccount.addTransaction(transaction);
+
+            return;
+        }
+
         double fromRon = ExchangeRates.findCurrency("RON", neededAccount.getCurrency());
         switch (command.getNewPlanType()) {
             case "silver" -> {

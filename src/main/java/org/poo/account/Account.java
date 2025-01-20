@@ -23,7 +23,7 @@ public class Account {
     private ArrayList<ObjectNode> accountTransactions;
     private String alias;
     private Map<Commerciant, Integer> transPerCommerciant;
-    private Map<Commerciant, Boolean> cashbacks;
+    private Map<String, Boolean> cashbacks;
     private double cashbackAmount;
 
     /**
@@ -47,11 +47,14 @@ public class Account {
         for (Commerciant commerciant : commerciants) {
             if (commerciant.getCashbackStrategy().equals("nrOfTransactions")) {
                 getTransPerCommerciant().put(commerciant, 0);
-                getCashbacks().put(commerciant, false);
             }
         }
 
-        this.setCashbackAmount(0);
+        getCashbacks().put("Food", false);
+        getCashbacks().put("Clothes", false);
+        getCashbacks().put("Tech", false);
+
+        setCashbackAmount(0);
     }
 
     /**
@@ -116,9 +119,9 @@ public class Account {
 
     /**
      * Put true if I used this commerciant casback to specified number of Transactions
-     * @param neededCommerciant - the specified commerciant
+     * @param type - the specified commerciant
      */
-    public void gotThisCommerciantCashback(final Commerciant neededCommerciant) {
-        getCashbacks().put(neededCommerciant, true);
+    public void gotThisCommerciantCashback(final String type) {
+        getCashbacks().put(type, true);
     }
 }

@@ -40,7 +40,8 @@ public final class Utils {
     public static final double MEDIUM_GOLD_RATE = 0.0055;
     public static final double LARGE_GOLD_RATE = 0.007;
     public static final double AGE_LIMIT = 21;
-
+    public static final String BUSINESS_ACCOUNT = "business";
+    public static final double EMPLOYEE_LIMIT_FEE = 500;
     private static Random ibanRandom = new Random(IBAN_SEED);
     private static Random cardRandom = new Random(CARD_SEED);
 

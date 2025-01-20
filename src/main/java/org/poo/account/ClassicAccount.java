@@ -18,8 +18,12 @@ public final class ClassicAccount extends Account implements SpecialAccountFunct
     /**
      * Constructor for ClassicAccount
      * @param currency for the account
+     * @param myCommerciants for the account
+     * @param owner for the account
      */
-    public ClassicAccount(final String currency, final ArrayList<Commerciant> myCommerciants, final User owner) {
+    public ClassicAccount(final String currency,
+                          final ArrayList<Commerciant> myCommerciants,
+                          final User owner) {
         super(currency, Utils.CLASSIC, myCommerciants, owner);
         this.setCommerciants(new ArrayList<>());
     }

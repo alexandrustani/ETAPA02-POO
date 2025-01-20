@@ -10,7 +10,6 @@ import org.poo.fileio.CommandInput;
 import org.poo.user.User;
 import org.poo.account.Account;
 import org.poo.card.Card;
-import org.poo.utils.Utils;
 
 import java.util.ArrayList;
 
@@ -77,13 +76,6 @@ public final class CheckCardStatus implements VisitableCommand {
                     "You have reached the minimum amount of funds, the card will be frozen");
 
             neededAccount.addTransaction(frozen);
-
-            return;
-        }
-
-        if (neededAccount.getBalance() - neededAccount.getMinimumBalance()
-                <= Utils.WARNING_LIMIT) {
-            neededCard.setCardStatus("warning");
         }
     }
 

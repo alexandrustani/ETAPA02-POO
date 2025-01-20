@@ -20,9 +20,11 @@ public final class FactoryOfAccount {
     }
 
     /**
-     * Create an account based on the account type.
-     * @param command the command input
-     * @return the account
+     * Create an account based on the command input.
+     * @param command - the command input
+     * @param myCommerciants - the list of commerciants
+     * @param user - the user
+     * @return the created account
      */
     public static Account createAccount(final CommandInput command,
                                         final ArrayList<Commerciant> myCommerciants,
@@ -32,8 +34,11 @@ public final class FactoryOfAccount {
                                                         command.getInterestRate(),
                                                         myCommerciants,
                                                         user);
-            case "classic", "business" -> new ClassicAccount(command.getCurrency(),
+            case "classic" -> new ClassicAccount(command.getCurrency(),
                                                              myCommerciants, user);
+
+            case "business" -> new BusinessAccount(command.getCurrency(),
+                                                        myCommerciants, user);
             default -> throw new IllegalArgumentException("Invalid account type");
         };
     }

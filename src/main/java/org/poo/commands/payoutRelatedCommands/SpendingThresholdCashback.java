@@ -14,12 +14,57 @@ import org.poo.utils.Utils;
 
 @Data
 public final class SpendingThresholdCashback implements CashbackStrategy {
+    /**
+     * Empty constructor.
+     */
+    public SpendingThresholdCashback() {
+
+    }
+
     @Override
     public void applyCashback(final CommandInput command, final Account neededAccount,
                               final User neededUser, final Commerciant neededCommerciant,
                               final double neededExchangeRate) {
-        double rateToRon = ExchangeRates.findCurrency(command.getCurrency(), "RON");
+        double rateToRon;
+        if (command.getCurrency() == null) {
+            rateToRon = ExchangeRates.findCurrency(neededAccount.getCurrency(), "RON");
+        } else {
+            rateToRon = ExchangeRates.findCurrency(command.getCurrency(), "RON");
+        }
+
         double myCashback = neededAccount.getCashbackAmount() + command.getAmount() * rateToRon;
+
+        String type = neededCommerciant.getType();
+
+        for (Commerciant commerciant : neededAccount.getTransPerCommerciant().keySet()) {
+            if (neededAccount.getTransPerCommerciant().get(commerciant) >= Utils.FOOD_TRANSACTIONS
+                    && type.equals("Food")
+                    && !neededAccount.getCashbacks().get(type)) {
+                neededAccount.addAmountToBalance(Utils.FOOD_CASHBACK
+                        * neededExchangeRate * command.getAmount());
+                neededAccount.gotThisCommerciantCashback(type);
+                break;
+            }
+
+            if (neededAccount.getTransPerCommerciant().get(commerciant)
+                    >= Utils.CLOTHES_TRANSACTIONS
+                    && type.equals("Clothes")
+                    && !neededAccount.getCashbacks().get(type)) {
+                neededAccount.addAmountToBalance(Utils.CLOTHES_CASHBACK
+                        * neededExchangeRate * command.getAmount());
+                neededAccount.gotThisCommerciantCashback(type);
+                break;
+            }
+
+            if (neededAccount.getTransPerCommerciant().get(commerciant) >= Utils.TECH_TRANSACTIONS
+                    && type.equals("Tech")
+                    && !neededAccount.getCashbacks().get(type)) {
+                neededAccount.addAmountToBalance(Utils.TECH_CASHBACK
+                        * neededExchangeRate * command.getAmount());
+                neededAccount.gotThisCommerciantCashback(type);
+                break;
+            }
+        }
 
         if (myCashback >= Utils.SMALL_LIMIT && myCashback < Utils.MEDIUM_LIMIT) {
             applyCashbackForPlan(neededAccount, neededUser, Utils.SMALL_STUDENT_RATE,
@@ -27,7 +72,7 @@ public final class SpendingThresholdCashback implements CashbackStrategy {
                                  command.getAmount(), neededExchangeRate);
         } else if (myCashback >= Utils.MEDIUM_LIMIT && myCashback < Utils.LARGE_LIMIT) {
             applyCashbackForPlan(neededAccount, neededUser, Utils.MEDIUM_STUDENT_RATE,
-                                 Utils.MEDIUM_SILVER_RATE, Utils.LARGE_GOLD_RATE,
+                                 Utils.MEDIUM_SILVER_RATE, Utils.MEDIUM_GOLD_RATE,
                                  command.getAmount(), neededExchangeRate);
         } else if (myCashback >= Utils.LARGE_LIMIT) {
             applyCashbackForPlan(neededAccount, neededUser, Utils.LARGE_STUDENT_RATE,
@@ -53,12 +98,15 @@ public final class SpendingThresholdCashback implements CashbackStrategy {
                                       final double goldRate, final double amount,
                                       final double exchangeRate) {
         switch (neededUser.getPlan()) {
-            case "student", "standard" -> neededAccount.
-                                            addAmountToBalance(studentRate
-                                                                * exchangeRate * amount);
-            case "silver" -> neededAccount.addAmountToBalance(silverRate * exchangeRate * amount);
-            case "gold" -> neededAccount.addAmountToBalance(goldRate * exchangeRate * amount);
-            default -> neededAccount.addAmountToBalance(Utils.INITIAL_BALANCE);
+            case "student", "standard" ->
+                neededAccount.
+                    addAmountToBalance(studentRate
+                                        * exchangeRate * amount);
+            case "silver" ->
+                neededAccount.addAmountToBalance(silverRate * exchangeRate * amount);
+            case "gold" ->
+                neededAccount.addAmountToBalance(goldRate * exchangeRate * amount);
+            default -> throw new IllegalArgumentException("No plan like this.");
         }
     }
 }

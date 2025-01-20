@@ -27,20 +27,21 @@ public final class SetMinimumBalance implements VisitableCommand {
      * @param users - the list of users
      */
     public void execute(final CommandInput command, final ArrayList<User> users) {
-        User neededUser = null;
-        Account neededAccount = null;
-
-        for (User user : users) {
-            for (Account account : user.getAccounts()) {
-                if (account.getAccountIBAN().equals(command.getAccount())) {
-                    neededAccount = account;
-                    neededUser = user;
-                    break;
-                }
-            }
-        }
+        User neededUser = users.stream()
+                .filter(user -> user.getEmail().equals(command.getEmail()))
+                .findFirst()
+                .orElse(null);
 
         if (neededUser == null) {
+            return;
+        }
+
+        Account neededAccount = neededUser.getAccounts().stream()
+                .filter(account -> account.getAccountIBAN().equals(command.getAccount()))
+                .findFirst()
+                .orElse(null);
+
+        if (neededAccount == null) {
             return;
         }
 

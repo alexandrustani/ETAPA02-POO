@@ -25,9 +25,10 @@ public final class AddAccount implements VisitableCommand {
     }
 
     /**
-     * Add account to user
-     * @param command to execute
-     * @param users to add account
+     * Execute the addAccount command.
+     * @param command - the command to be executed
+     * @param users - the list of users
+     * @param myCommerciants - the list of commerciants
      */
     public void execute(final CommandInput command, final ArrayList<User> users,
                         final ArrayList<Commerciant> myCommerciants) {
